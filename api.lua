@@ -172,6 +172,15 @@ end
 --minetest.register_on_receiving_chat_message(function(sendername,msg)
 --minetest.register_on_sending_chat_message(function(sendername,msg)
 
+-- Chat Tags
+modSoundChat.ChatTags = {}
+
+-- Server Tags
+modSoundChat.ChatTags["Admin"] = {
+	priv = "server",
+	color = "#FF0000",
+}
+
 minetest.register_on_chat_message(function(sendername, msg)
 	if minetest.get_player_privs(sendername).shout then
    if modSoundChat.isPrintTerminalDialogs() then
@@ -181,18 +190,27 @@ minetest.register_on_chat_message(function(sendername, msg)
 	for i,player in ipairs(minetest.get_connected_players()) do
 		if player and player:is_player() and player:get_player_name() then
 			local playername = player:get_player_name()
+			local playerprivs = minetest.get_player_privs(sendername)
 			
-			if minetest.get_player_privs(sendername).server then
-				minetest.chat_send_player(
-					playername, 
-					core.colorize("#FF0000", ""..sendername.." (Admin): ")..msg
-				)
-			else
+			local sent = false
+			
+			for tag_name,tag_def in pairs(modSoundChat.ChatTags) do
+				if playerprivs[tag_def.priv] then
+					sent = true
+					minetest.chat_send_player(
+						playername, 
+						core.colorize(tag_def.color, ""..sendername.." ("..tag_name.."): ")..msg
+					)
+					break
+				end
+			end
+			if sent == false then
 				minetest.chat_send_player(
 					playername, 
 					core.colorize("#00FF00", sendername..": ")..msg
 				)
 			end
+			
 			--]]
 			if modSoundChat.isEnabled() and type(msg)=="string" and msg:len()>=3 then
 				if playername~=sendername then --Toca para todos ,exceto para quem enviou a mensagem.
